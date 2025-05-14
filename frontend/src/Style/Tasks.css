@@ -1,67 +1,94 @@
-/* Tasks.css */
+:root {
+  --primary-color: #3193ab;
+  --secondary-color: #555;
+  --background-color: #f4f6f8;
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f6f8;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .tasks-container {
-    max-width: 800px;
-    margin: 60px auto;
-    padding: 0 16px;
-  }
-  
-  .tasks-container h1 {
-    text-align: center;
-    margin-bottom: 32px;
-    color: #333;
-  }
-  
-  .tasks-container ul {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  .task-card {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-left: 6px solid #3193ab;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    padding: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease;
-  }
-  
-  .task-card:hover {
-    transform: translateY(-2px);
-  }
-  
-  .task-card h3 {
-    margin-top: 0;
-    color: #3193ab;
-  }
-  
-  .task-card p {
-    margin: 6px 0;
-    color: #555;
-  }
-  
-  .error,
-  .loading {
-    text-align: center;
-    color: #d32f2f;
-    margin-top: 40px;
-    font-size: 18px;
-  }
-  
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
 
-  .tasks-container button {
-    background-color: #f4f6f8;
-    color: #3193ab;
-    border: none;
-    text-decoration: underline;
-    font-size: 1rem;
-  }
+.tasks-container {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 0 16px;
+}
+
+.tasks-container h1 {
+  text-align: center;
+  margin-bottom: 32px;
+  color: var(--primary-color);
+}
+
+.tasks-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.task-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-left: 6px solid var(--primary-color);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+}
+
+.task-card h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.task-card p {
+  margin: 6px 0;
+  color: var(--secondary-color);
+}
+
+.error,
+.loading {
+  text-align: center;
+  color: #d32f2f;
+  margin-top: 40px;
+  font-size: 18px;
+}
+
+.tasks-container button {
+  background-color: var(--background-color);
+  color: var(--primary-color);
+  border: none;
+  text-decoration: underline;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.tasks-container button:hover {
+  opacity: 0.8;
+}
+
+.theme-select {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 0.5rem;
+}
+
+.theme-select label {
+  color: var(--secondary-color);
+  font-weight: bold;
+}
+
+.theme-select select {
+  padding: 4px 8px;
+  font-family: inherit;
+}

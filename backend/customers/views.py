@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -13,7 +14,6 @@ from django_tenants.utils import schema_context
 
 
 User = get_user_model()
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CompanySignupAPIView(APIView):
@@ -94,3 +94,5 @@ class LoginAPIView(APIView):
             "tenant": request.tenant.schema_name,
             "username": user.username
         }, status=status.HTTP_200_OK)
+
+

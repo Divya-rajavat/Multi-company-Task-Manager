@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import connection 
+from users.models import Theme
 
 User = get_user_model()
 
@@ -18,3 +19,6 @@ class CustomUserAdmin(admin.ModelAdmin):
                 raise ValidationError("User limit reached for this tenant.")
 
         super().save_model(request, obj, form, change)
+
+
+admin.site.register(Theme)

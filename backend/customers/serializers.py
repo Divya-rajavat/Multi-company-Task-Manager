@@ -13,3 +13,4 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = ['schema_name', 'name']
+
