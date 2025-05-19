@@ -32,17 +32,23 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", 
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http:\/\/([a-z0-9-]+)\.localhost:5173$",  
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_ALL_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-tenant-schema',
+    "x-admin-token",
 ]
 
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+SUPERUSER_SECRET = "aa1e3c85f773524a713f4c8d36f27745702954911faec1dfaeb7312493f68bce"  
 
 # Application definition
 

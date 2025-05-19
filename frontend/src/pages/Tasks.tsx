@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../Style/Tasks.css';
+import { logoutUser } from './Logout';
 
 interface Task {
   id: number;
@@ -30,15 +31,12 @@ function Tasks() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
-  const tenantDomain = localStorage.getItem('tenant_domain');
+  const tenant = localStorage.getItem('tenant')
 
   const fetchTasks = async () => {
     try {
-      if (!tenantDomain) {
-        throw new Error('Tenant domain not found. Please login again.');
-      }
 
-      const response = await axios.get(`http://${tenantDomain}:8000/tasks/`, {
+      const response = await axios.get(`http://${tenant}.localhost:8000/tasks/`, {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -55,7 +53,7 @@ function Tasks() {
 
   const fetchThemes = async () => {
     try {
-      const response = await axios.get(`http://${tenantDomain}:8000/theme/`);
+      const response = await axios.get(`http://${tenant}.localhost:8000/theme/`);
       const allThemes: Theme[] = response.data;
 
       setThemes(allThemes);
@@ -68,6 +66,9 @@ function Tasks() {
       console.error('Failed to load themes', err);
     }
   };
+
+
+
 
   useEffect(() => {
     fetchTasks();
@@ -86,11 +87,11 @@ function Tasks() {
 
   const themeStyles = selectedTheme
     ? {
-        '--primary-color': selectedTheme.primary_color,
-        '--secondary-color': selectedTheme.secondary_color,
-        '--background-color': selectedTheme.background_color,
-        '--font-family': selectedTheme.font_family,
-      } as React.CSSProperties
+      '--primary-color': selectedTheme.primary_color,
+      '--secondary-color': selectedTheme.secondary_color,
+      '--background-color': selectedTheme.background_color,
+      '--font-family': selectedTheme.font_family,
+    } as React.CSSProperties
     : {};
 
   if (loading) return <div>Loading...</div>;
@@ -99,6 +100,8 @@ function Tasks() {
   return (
     <div className="tasks-container" style={themeStyles}>
       <div className="header">
+        <h2 className="tenant-name">{tenant}</h2>
+        <button onClick={logoutUser} className='logout-button'>Logout </button>
         <h1>Task List</h1>
         <div className="theme-select">
           <label htmlFor="theme-dropdown">Theme:</label>

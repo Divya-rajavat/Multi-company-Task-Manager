@@ -15,11 +15,11 @@ const CreateTask = () => {
 
   const navigate = useNavigate();
 
-  const tenantDomain = localStorage.getItem('tenant_domain');
+  const tenant = localStorage.getItem('tenant');
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    axios.get(`http://${tenantDomain}:8000/users/`, {
+    axios.get(`http://${tenant}.localhost:8000/users/`, {
       headers: {
         Authorization: `Token ${token}`,
       },
@@ -30,7 +30,7 @@ const CreateTask = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`http://${tenantDomain}:8000/tasks/`, {
+      await axios.post(`http://${tenant}.localhost:8000/tasks/`, {
         title,
         description,
         status,

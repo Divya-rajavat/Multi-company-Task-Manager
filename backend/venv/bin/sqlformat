@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/home/codetrade/Public/Projects/Task5/Multi Company Task Manager/backend/venv/bin/python3" "$0" "$@"
+'''exec' "/home/codetrade/Public/Tasks/Task5/Multi Company Task Manager/backend/venv/bin/python3" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

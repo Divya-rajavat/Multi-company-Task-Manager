@@ -21,6 +21,13 @@ body {
     margin-bottom: 24px;
     color: #333;
   }
+
+  .company-dropdown
+{
+  margin-bottom: 5%;
+  font-size: 14px;
+  padding: 12px 14px;
+}
   
   .login-container form {
     display: flex;

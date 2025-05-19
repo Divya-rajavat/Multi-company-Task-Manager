@@ -18,6 +18,13 @@ body {
   padding: 0 16px;
 }
 
+.tenant-name {
+  text-decoration:solid;
+  text-align: center;
+  font-size: 40px;
+  color: black;
+}
+
 .tasks-container h1 {
   text-align: center;
   margin-bottom: 32px;
@@ -63,7 +70,6 @@ body {
 }
 
 .tasks-container button {
-  background-color: var(--background-color);
   color: var(--primary-color);
   border: none;
   text-decoration: underline;
@@ -91,4 +97,12 @@ body {
 .theme-select select {
   padding: 4px 8px;
   font-family: inherit;
+}
+
+
+.logout-button {
+margin-left: 90%;
+padding: 5px 10px;
+border-radius: 10px;
+text-decoration: none;
 }

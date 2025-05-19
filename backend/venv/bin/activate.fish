@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/home/codetrade/Public/Projects/Task5/Multi Company Task Manager/backend/venv'
+set -gx VIRTUAL_ENV '/home/codetrade/Public/Tasks/Task5/Multi Company Task Manager/backend/venv'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
