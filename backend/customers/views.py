@@ -6,108 +6,84 @@ from rest_framework.permissions import AllowAny, IsAuthenticated,BasePermission
 from django.contrib.auth import get_user_model, authenticate
 from django.db import transaction
 from rest_framework.authtoken.models import Token
-from .models import Client, Domain
+from .models import Client,Domain , Plan
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate
 from django_tenants.utils import schema_context
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
-
+from datetime import date, timedelta
 
 User = get_user_model()
 
 @method_decorator(csrf_exempt, name='dispatch')
-class CompanySignupAPIView(APIView):
+class CompanyAndTenantAdminSignupAPIView(APIView):
     authentication_classes = []
     permission_classes = []
 
     def post(self, request):
-        current_tenant = getattr(request, 'tenant', None)
-
-        if not current_tenant or current_tenant != 'public':
-            return Response(
-                {"detail": "Tenant can only be created from the public schema."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         company_name = request.data.get('company_name')
-        username = request.data.get('username')
-        password = request.data.get('password')
+        tenant_admin_username = request.data.get('tenant_admin_username')
+        tenant_admin_email = request.data.get('tenant_admin_email')
+        tenant_admin_password = request.data.get('tenant_admin_password')
+        plan_name = request.data.get('plan')
 
-        if not company_name or not username or not password:
-            return Response({"detail": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+        required_fields = [company_name, tenant_admin_username, tenant_admin_email, tenant_admin_password, plan_name]
+        if not all(required_fields):
+            return Response({"detail": "All fields are required, including plan."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(username=username, password=password)
-
-        if not user or not user.is_superuser:
-            return Response({"detail": "Invalid superuser credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            plan = Plan.objects.get(name=plan_name)
+        except Plan.DoesNotExist:
+            return Response({"detail": "Invalid plan selected."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
-                tenant = Client(
-                    schema_name=company_name.lower(),
-                    name=company_name,
-                    paid_until='2025-12-31',
-                    on_trial=True
-                )
-                tenant.save()
+                schema_name = company_name.lower()
+                if Client.objects.filter(schema_name=schema_name).exists():
+                    return Response({"detail": "Tenant with this company name already exists."}, status=400)
 
-                domain = Domain()
-                domain.domain = f'{company_name.lower()}.localhost'
-                domain.tenant = tenant
-                domain.is_primary = True
-                domain.save()
+                today = date.today()
+                trial_end_date = today + timedelta(days=plan.trial_days)
+                paid_until_date = today + timedelta(days=plan.duration_days)
+
+                tenant = Client.objects.create(
+                    schema_name=schema_name,
+                    name=company_name,
+                    paid_until=paid_until_date,
+                    on_trial=True,
+                    plan=plan,
+                )
+
+                Domain.objects.create(
+                    domain = f"{schema_name}.localhost",
+                    tenant=tenant,
+                    is_primary=True
+                )
+
+            with schema_context(schema_name):
+                with transaction.atomic():
+                    if User.objects.filter(username=tenant_admin_username).exists():
+                        return Response({"detail": "Username already exists in this tenant."}, status=400)
+
+                    tenant_admin = User.objects.create_user(
+                        username=tenant_admin_username,
+                        email=tenant_admin_email,
+                        password=tenant_admin_password,
+                        is_staff=True,
+                        is_superuser=True
+                    )
 
             return Response({
-                "detail": f"Tenant '{company_name}' created successfully.",
-                "tenant": tenant.schema_name,
+                "detail": f"Tenant '{company_name}' with plan '{plan_name}' and admin '{tenant_admin_username}' created successfully.",
+                "tenant": schema_name,
+                "admin": tenant_admin_username,
+                "plan": plan_name,
+                "domain": f"{schema_name}.localhost"
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-
-
-
-class RegisterTenantAdminAPIView(APIView):
-    permission_classes = []
-
-    def post(self, request):
-        host = request.get_host().split(':')[0]  
-        schema_name = None
-
-        if host == "localhost":
-            schema_name = request.data.get('schema_name')  
-            if not schema_name:
-                return Response({"detail": "Schema name required on base domain."}, status=400)
-        else:
-            subdomain = host.split('.')[0]
-            schema_name = subdomain
-
-        username = request.data.get('username')
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        if not username or not email or not password:
-            return Response({"detail": "Username, email, and password are required."}, status=400)
-
-        try:
-            with schema_context(schema_name):
-                with transaction.atomic():
-                    if User.objects.filter(username=username).exists():
-                        return Response({"detail": "Username already exists in this tenant."}, status=400)
-
-                    user = User.objects.create_user(username=username, email=email, password=password)
-                    user.is_staff = True
-                    user.is_superuser = True
-                    user.save()
-
-            return Response({"detail": f"Admin '{username}' created for tenant '{schema_name}'."}, status=201)
-
-        except Exception as e:
-            return Response({"detail": str(e)}, status=500)
 
 
 
@@ -242,7 +218,7 @@ class LoginAPIView(APIView):
 
 
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutAPIView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -262,3 +238,23 @@ class LogoutAPIView(APIView):
         return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
 
 
+
+
+
+class PlanListAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        plans = Plan.objects.all()
+        data = [
+            {
+                "id": plan.id,
+                "name": plan.name,
+                "price": str(plan.price),
+                "duration_days": plan.duration_days,
+                "trial_days": plan.trial_days
+            }
+            for plan in plans
+        ]
+        return Response(data)

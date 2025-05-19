@@ -11,8 +11,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/create-tenant" element={<Signup />} />
-        <Route path='/register-admin' element={<RegisterAdmin />} />
+        <Route path="/signup" element={<Signup />} />
+        {/* <Route path='/register-admin' element={<RegisterAdmin />} /> */}
         <Route path="/user-signup" element={<UserSignup />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path='/create-task' element={<CreateTask />} />
