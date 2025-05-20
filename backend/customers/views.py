@@ -6,13 +6,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated,BasePermission
 from django.contrib.auth import get_user_model, authenticate
 from django.db import transaction
 from rest_framework.authtoken.models import Token
-from .models import Client,Domain , Plan
+from .models import Client, Domain, Plan, Payment
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate
 from django_tenants.utils import schema_context
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
 from datetime import date, timedelta
+import random
 
 User = get_user_model()
 
@@ -27,6 +28,15 @@ class CompanyAndTenantAdminSignupAPIView(APIView):
         tenant_admin_email = request.data.get('tenant_admin_email')
         tenant_admin_password = request.data.get('tenant_admin_password')
         plan_name = request.data.get('plan')
+
+
+        user_limit_map = {
+            "basic": 5,
+            "premium": 15,
+            "enterprise": 100
+        }
+
+        user_limit = user_limit_map.get(plan_name.lower(), 5)
 
         required_fields = [company_name, tenant_admin_username, tenant_admin_email, tenant_admin_password, plan_name]
         if not all(required_fields):
@@ -53,6 +63,7 @@ class CompanyAndTenantAdminSignupAPIView(APIView):
                     paid_until=paid_until_date,
                     on_trial=True,
                     plan=plan,
+                    user_limit=user_limit
                 )
 
                 Domain.objects.create(
@@ -91,6 +102,51 @@ class CompanyAndTenantAdminSignupAPIView(APIView):
 
 
 
+class SimulatePaymentAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        company_name = request.data.get('company_name')
+        plan_name = request.data.get('plan')
+        payment_status = request.data.get('payment_status')  
+
+        if not company_name or not plan_name:
+            return Response({"detail": "company_name and plan are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        if payment_status not in ['success', 'failed']:
+            payment_status = 'failed'
+            return Response({"detail": "Invalid payment status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            plan = Plan.objects.get(name__iexact=plan_name)
+        except Plan.DoesNotExist:
+            return Response({"detail": "Invalid plan selected."}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = plan.price
+
+        payment = Payment.objects.create(
+            company_name=company_name,
+            plan=plan.name,
+            amount=amount,
+            status=payment_status
+        )
+
+        return Response({
+            "status": payment_status,
+            "amount": amount,
+            "plan": plan.name,
+            "company_name": company_name,
+            "payment_id": payment.id
+        }, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UserSignupAPIView(APIView):
@@ -107,6 +163,8 @@ class UserSignupAPIView(APIView):
         if not username or not email or not password:
             return Response({"detail": "Username, email, and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        User = get_user_model()
+
         if is_base_domain:
             schema_name = request.data.get('schema_name')
             if not schema_name:
@@ -115,14 +173,19 @@ class UserSignupAPIView(APIView):
             try:
                 with schema_context(schema_name):
                     with transaction.atomic():
-                        User = get_user_model()
+                        if User.objects.filter(is_superuser=True).exists():
+                            return Response({"detail": "Superuser already exists for this tenant."}, status=400)
+
                         if User.objects.filter(username=username).exists():
                             return Response({"detail": "Username already exists in this tenant."}, status=400)
 
-                        user = User.objects.create_user(username=username, email=email, password=password)
-                        user.is_staff = True
-                        user.is_superuser = True
-                        user.save()
+                        user = User.objects.create_user(
+                            username=username,
+                            email=email,
+                            password=password,
+                            is_staff=True,
+                            is_superuser=True
+                        )
 
                         token, _ = Token.objects.get_or_create(user=user)
 
@@ -138,7 +201,12 @@ class UserSignupAPIView(APIView):
             try:
                 with schema_context(request.tenant.schema_name):
                     with transaction.atomic():
-                        User = get_user_model()
+                        user_count = User.objects.count()
+                        user_limit = request.tenant.user_limit or 5
+
+                        if user_count >= user_limit:
+                            return Response({"detail": "User limit reached for your plan."}, status=400)
+
                         if User.objects.filter(username=username).exists():
                             return Response({"detail": "Username already exists."}, status=400)
 
@@ -154,6 +222,7 @@ class UserSignupAPIView(APIView):
 
             except Exception as e:
                 return Response({"detail": str(e)}, status=500)
+
 
 
 
@@ -258,3 +327,24 @@ class PlanListAPIView(APIView):
             for plan in plans
         ]
         return Response(data)
+
+
+
+
+
+
+
+
+class UserLimitAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        tenant = request.tenant
+        user_model = get_user_model()
+        current_user_count = user_model.objects.count()
+
+        return Response({
+            "user_limit": tenant.user_limit,
+            "current_users": current_user_count,
+            "remaining": max(tenant.user_limit - current_user_count, 0)
+        })

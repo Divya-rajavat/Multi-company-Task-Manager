@@ -4,7 +4,6 @@ import Signup from './pages/Signup';
 import Tasks from './pages/Tasks';
 import CreateTask from './pages/CreateTask';
 import UserSignup from './pages/UserSignup';
-import RegisterAdmin from './pages/RegisterAdmin';
 
 function App() {
   return (
@@ -12,7 +11,6 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        {/* <Route path='/register-admin' element={<RegisterAdmin />} /> */}
         <Route path="/user-signup" element={<UserSignup />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path='/create-task' element={<CreateTask />} />
